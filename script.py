@@ -3,10 +3,6 @@ from pyglet.math import Vec2
 import pyglet.input as inp
 import avgmethods
 
-# this holds the state of a specific controller
-class ControllerState:
-    def __init__(self):
-        self.vector = Vec2(0, 0)
 
 # this holds all the input data
 class InputHandler:
@@ -19,7 +15,11 @@ class InputHandler:
     def on_stick_motion(self, controller, stick, vector):
 
         if(stick == "leftstick"):
-            self.inputs[controller].vector = vector
+            self.inputs[controller] = vector
+
+    def get_final_output(self):
+        return avgmethods.avg(self.inputs.values())
+        
 
 
 
@@ -34,7 +34,7 @@ def main():
         controller.open()
         controller.rumble_play_weak(1.0, 0.1)
         print("Connected:", controller)
-        handler.inputs[controller] = ControllerState()
+        handler.inputs[controller] = Vec2(0, 0)
         controller.push_handlers(handler)
 
 
