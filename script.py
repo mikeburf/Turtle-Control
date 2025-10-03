@@ -1,10 +1,10 @@
 import pyglet.input as inp
 import avgmethods
 
-USE_MANAGER = False
+USE_MANAGER = True
 
-# this uses the controller manager, which is more abstracted and therefore I trust it less
-def main_manager():
+# this uses the controller manager, which is more abstracted and therefore I dont trust it
+def main():
     manager = inp.ControllerManager()
     controllers = manager.get_controllers()
 
@@ -24,19 +24,9 @@ def main_manager():
 
     for controller in controllers:
         print(controller)
-        print(controller.is_open)
-        print(controller.controls)
+        
     input()
     print ("done.")
 
-# this is more low-level
-def main_devices():
-    devices = inp.get_devices()
-    for device in devices:
-        print(device)
-        print(device.is_open)
-        print(device.controls)
-
 if __name__ == "__main__":
-    if USE_MANAGER: main_manager()
-    else: main_devices()
+    main()
