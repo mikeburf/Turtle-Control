@@ -15,7 +15,6 @@ class InputHandler:
 
         self.inputs = dict() # map of controllers to states
         print()
-        self.debug()
 
     def on_stick_motion(self, controller, stick, vector):
 
