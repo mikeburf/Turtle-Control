@@ -1,3 +1,4 @@
+import pyglet
 import pyglet.input as inp
 import avgmethods
 
@@ -25,8 +26,9 @@ def main():
     for controller in controllers:
         print(controller)
         
-    input()
+    
     print ("done.")
 
 if __name__ == "__main__":
     main()
+    pyglet.app.run()
