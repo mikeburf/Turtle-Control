@@ -26,30 +26,34 @@ class InputHandler:
 # this uses the controller manager, which is more abstracted and therefore I dont trust it
 def main():
     manager = inp.ControllerManager() # this handles hotplugging
-    handler = InputHandler() # this handles controller states
+    handler = InputHandler() # this handles controller
 
     # these will be called when a controller is plugged/unplugged
     # copied from some ros2 thing somewhere
     def on_connect(controller):
         controller.open()
         controller.rumble_play_weak(1.0, 0.1)
-        print("Connected:", controller)
+        print("\nConnected:", controller)
         handler.inputs[controller] = Vec2(0, 0)
         controller.push_handlers(handler)
 
 
     def on_disconnect(controller):
-        print("Disconnected:", controller)
+        print("\nDisconnected:", controller)
         handler.inputs.pop(controller)
         controller.remove_handlers(handler)
+
+    def debug_callback(dt):
+        print("\r", handler.get_final_output(), " "*50, end="")
 
     
     manager.on_connect = on_connect
     manager.on_disconnect = on_disconnect
 
-    # initializes already connected controllers
-    if controllers := manager.get_controllers():
-        on_connect(controllers[0])
+    pyglet.clock.schedule_interval(debug_callback, 0.1) # print the final output every second
+
+    for controller in manager.get_controllers():
+        on_connect(controller)
     
     try:
         print("Ctrl-C to quit")
@@ -61,5 +65,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    print("exit.")

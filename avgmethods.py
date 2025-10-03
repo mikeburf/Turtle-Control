@@ -2,6 +2,8 @@ from pyglet.math import Vec2
 # input vectors should be Vec2s
 
 def __avg(inputs: list[Vec2]) -> Vec2:
+    if len(inputs) == 0:
+        return Vec2(0, 0)
     return sum(inputs) / len(inputs)
 
 def __clamp(v: Vec2) -> Vec2:
