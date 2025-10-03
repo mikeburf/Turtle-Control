@@ -50,8 +50,13 @@ def main():
     # initializes already connected controllers
     if controllers := manager.get_controllers():
         on_connect(controllers[0])
-        
-    pyglet.app.run() # runs the pyglet loop that handles input
+    
+    try:
+        print("Ctrl-C to quit")
+        pyglet.app.run() # runs the pyglet loop that handles input
+    except KeyboardInterrupt:
+        pass
+
     print ("done.")
 
 if __name__ == "__main__":
