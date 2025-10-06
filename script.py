@@ -4,6 +4,7 @@ from pyglet.math import Vec2
 import pyglet.input as inp
 import avgmethods
 import threading
+import time
 
 #from geometry_msgs.msg import Twist
 #from geometry_msgs.msg import TwistStamped
@@ -41,20 +42,22 @@ def loop(handler):
     status = 0
     while handler.running:
         print("Looping!", handler.get_final_output(), status)
+        time.sleep(0.1)
         status += 1
     """
-    while (True):
-        try:
-            qos = QosProfile(depth=10)
-            node = rclpy.create_node('teleop_keyboard')
-            pub = node.create_publisher(Twist, 'cmd_vel', qos)
 
-            status = 0
-            target_linear_velocity = 0.0
-            target_angular_velocity = 0.0
-            control_linear_velocity = 0.0
-            control_angular_velocity = 0.0
 
+    qos = QosProfile(depth=10)
+    node = rclpy.create_node('teleop_keyboard')
+    pub = node.create_publisher(Twist, 'cmd_vel', qos)
+
+    status = 0
+    target_linear_velocity = 0.0
+    target_angular_velocity = 0.0
+    control_linear_velocity = 0.0
+    control_angular_velocity = 0.0
+    try:
+        while (True):
             dir = handler.get_final_output()
             target_linear_velocity = dir.y * MAX_VEL_LINEAR
             target_angular_velocity = dir.x * MIN_VEL_ANGULAR
@@ -68,17 +71,17 @@ def loop(handler):
             twist.angular.y = 0.0
             twist.angular.z = control_angular_velocity
             pub.publish(twist)
-        except Exception as e:
-            print(e)
-        finally:
-            twist = Twist()
-            twist.linear.x = 0.0
-            twist.linear.y = 0.0
-            twist.linear.z = 0.0
-            twist.angular.x = 0.0
-            twist.angular.y = 0.0
-            twist.angular.z = 0.0
-            pub.publish(twist)
+    except Exception as e:
+        print(e)
+    finally:
+        twist = Twist()
+        twist.linear.x = 0.0
+        twist.linear.y = 0.0
+        twist.linear.z = 0.0
+        twist.angular.x = 0.0
+        twist.angular.y = 0.0
+        twist.angular.z = 0.0
+        pub.publish(twist)
             
         """
 
