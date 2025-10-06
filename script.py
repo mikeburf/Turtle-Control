@@ -1,8 +1,18 @@
 import pyglet
+
 from pyglet.math import Vec2
 import pyglet.input as inp
 import avgmethods
+import threading
 
+#from geometry_msgs.msg import Twist
+#from geometry_msgs.msg import TwistStamped
+#import rclpy
+#from rclpy.clock import Clock
+#from rclpy.qos import QoSProfile
+
+MAX_VEL_LINEAR = 0.22
+MIN_VEL_ANGULAR = 2.84
 
 # this holds all the input data
 class InputHandler:
@@ -10,6 +20,8 @@ class InputHandler:
     def __init__(self):
 
         self.inputs = dict() # map of controllers to states
+        self.running = True
+        self.status = 0
         print()
 
     def on_stick_motion(self, controller, stick, vector):
@@ -19,8 +31,56 @@ class InputHandler:
 
     def get_final_output(self):
         return avgmethods.avg(self.inputs.values())
-        
+    
+def clamp(x, min, max):
+    if x < min: return min
+    if x > max: return max
+    return x
 
+def loop(handler):
+    status = 0
+    while handler.running:
+        print("Looping!", handler.get_final_output(), status)
+        status += 1
+    """
+    while (True):
+        try:
+            qos = QosProfile(depth=10)
+            node = rclpy.create_node('teleop_keyboard')
+            pub = node.create_publisher(Twist, 'cmd_vel', qos)
+
+            status = 0
+            target_linear_velocity = 0.0
+            target_angular_velocity = 0.0
+            control_linear_velocity = 0.0
+            control_angular_velocity = 0.0
+
+            dir = handler.get_final_output()
+            target_linear_velocity = dir.y * MAX_VEL_LINEAR
+            target_angular_velocity = dir.x * MIN_VEL_ANGULAR
+
+            twist = Twist()
+            twist.linear.x = control_linear_velocity
+            twist.linear.y = 0.0
+            twist.linear.z = 0.0
+
+            twist.angular.x = 0.0
+            twist.angular.y = 0.0
+            twist.angular.z = control_angular_velocity
+            pub.publish(twist)
+        except Exception as e:
+            print(e)
+        finally:
+            twist = Twist()
+            twist.linear.x = 0.0
+            twist.linear.y = 0.0
+            twist.linear.z = 0.0
+            twist.angular.x = 0.0
+            twist.angular.y = 0.0
+            twist.angular.z = 0.0
+            pub.publish(twist)
+            
+        """
 
 
 # this uses the controller manager, which is more abstracted and therefore I dont trust it
@@ -44,7 +104,8 @@ def main():
         controller.remove_handlers(handler)
 
     def debug_callback(dt):
-        print("\r", handler.get_final_output(), " "*50, end="")
+        print("Debug Callback!", handler.status)
+        handler.status += 1
 
     
     manager.on_connect = on_connect
@@ -54,12 +115,21 @@ def main():
 
     for controller in manager.get_controllers():
         on_connect(controller)
+
+    #rclpy.init()
+
+
     
     try:
         print("Ctrl-C to quit")
+        threading.Thread(target=loop, args=(handler,)).start()
         pyglet.app.run() # runs the pyglet loop that handles input
     except KeyboardInterrupt:
+        handler.running = False
         pass
+    finally:
+        handler.running = False
+        #rclpy.shutdown()
 
     print ("done.")
 
