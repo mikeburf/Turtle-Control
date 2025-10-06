@@ -2,18 +2,17 @@ import pyglet
 
 from pyglet.math import Vec2
 import pyglet.input as inp
-import avgmethods
 import threading
 import time
 
-#from geometry_msgs.msg import Twist
-#from geometry_msgs.msg import TwistStamped
-#import rclpy
-#from rclpy.clock import Clock
-#from rclpy.qos import QoSProfile
+from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
+import rclpy
+from rclpy.clock import Clock
+from rclpy.qos import QoSProfile
 
-MAX_VEL_LINEAR = 0.22
-MIN_VEL_ANGULAR = 2.84
+MAX_VEL_LINEAR = 0.5
+MIN_VEL_ANGULAR = 3.0
 
 # this holds all the input data
 class InputHandler:
@@ -31,25 +30,23 @@ class InputHandler:
             self.inputs[controller] = vector
 
     def get_final_output(self):
-        return avgmethods.avg(self.inputs.values())
+        #print(len(self.inputs))
+        if len(self.inputs) == 0: return Vec2(0, 0)
+        total = Vec2(0, 0)
+        for vec in self.inputs.values():
+            total += vec
+        return total / len(self.inputs)
+            
     
 def clamp(x, min, max):
     if x < min: return min
     if x > max: return max
     return x
 
-def loop(handler):
-    status = 0
-    while handler.running:
-        print("Looping!", handler.get_final_output(), status)
-        time.sleep(0.1)
-        status += 1
-    """
+#def robot_off():
+    
 
-
-    qos = QosProfile(depth=10)
-    node = rclpy.create_node('teleop_keyboard')
-    pub = node.create_publisher(Twist, 'cmd_vel', qos)
+def loop(handler, pub):
 
     status = 0
     target_linear_velocity = 0.0
@@ -57,33 +54,31 @@ def loop(handler):
     control_linear_velocity = 0.0
     control_angular_velocity = 0.0
     try:
-        while (True):
-            dir = handler.get_final_output()
-            target_linear_velocity = dir.y * MAX_VEL_LINEAR
-            target_angular_velocity = dir.x * MIN_VEL_ANGULAR
+        while (handler.running):
+            indir = handler.get_final_output()
+            target_linear_velocity = indir.y * MAX_VEL_LINEAR
+            target_angular_velocity = indir.x * MIN_VEL_ANGULAR
+
+            control_linear_velocity = target_linear_velocity
+            control_angular_velocity = target_angular_velocity
 
             twist = Twist()
             twist.linear.x = control_linear_velocity
             twist.linear.y = 0.0
             twist.linear.z = 0.0
-
+            
             twist.angular.x = 0.0
             twist.angular.y = 0.0
             twist.angular.z = control_angular_velocity
+
             pub.publish(twist)
+
     except Exception as e:
-        print(e)
+        print("Thread stopped!", e)
     finally:
-        twist = Twist()
-        twist.linear.x = 0.0
-        twist.linear.y = 0.0
-        twist.linear.z = 0.0
-        twist.angular.x = 0.0
-        twist.angular.y = 0.0
-        twist.angular.z = 0.0
-        pub.publish(twist)
+        pass
             
-        """
+        
 
 
 # this uses the controller manager, which is more abstracted and therefore I dont trust it
@@ -107,34 +102,53 @@ def main():
         controller.remove_handlers(handler)
 
     def debug_callback(dt):
-        print("Debug Callback!", handler.status)
+        print("\rCurrent Input:" + " "*50, handler.get_final_output())
         handler.status += 1
 
     
     manager.on_connect = on_connect
     manager.on_disconnect = on_disconnect
 
-    pyglet.clock.schedule_interval(debug_callback, 0.1) # print the final output every second
+    pyglet.clock.schedule_interval(debug_callback, 1) # print the final output every second
 
     for controller in manager.get_controllers():
         on_connect(controller)
 
-    #rclpy.init()
+    rclpy.init()
 
 
-    
+        
     try:
         print("Ctrl-C to quit")
-        threading.Thread(target=loop, args=(handler,)).start()
+        qos = QoSProfile(depth=10)
+        node = rclpy.create_node('mynode')
+        pub = node.create_publisher(Twist, 'cmd_vel', qos)
+
+        
+        threading.Thread(target=loop, args=(handler, pub)).start()
+        print("Thread started")
         pyglet.app.run() # runs the pyglet loop that handles input
+        print("Pyglet finished")
     except KeyboardInterrupt:
+        twist = Twist()
+        twist.linear.x = 0.0
+        twist.linear.y = 0.0
+        twist.linear.z = 0.0
+
+        twist.angular.x = 0.0
+        twist.angular.y = 0.0
+        twist.angular.z = 0.0
+        pub.publish(twist)
         handler.running = False
         pass
     finally:
         handler.running = False
+        
+ 
         #rclpy.shutdown()
 
     print ("done.")
 
 if __name__ == "__main__":
     main()
+
