@@ -11,8 +11,11 @@ import rclpy
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile
 
-MAX_VEL_LINEAR = 0.5
-MIN_VEL_ANGULAR = 3.0
+MAX_VEL_LINEAR = 0.22
+MAX_VEL_ANGULAR = 3.0
+
+MAX_DELTAV_LINEAR = 0.02
+MAX_DELTAV_ANGULAR = 0.3
 
 # this holds all the input data
 class InputHandler:
@@ -43,7 +46,12 @@ def clamp(x, min, max):
     if x > max: return max
     return x
 
-#def robot_off():
+def clamp_accel(current_v, target_v, max_delta):
+    if current_v < target_v:
+        return min(current_v + max_delta, target_v)
+    if current_v > target_v:
+        return max(current_v - max_delta, target_v)
+    return current_v
     
 
 def loop(handler, pub):
@@ -57,10 +65,10 @@ def loop(handler, pub):
         while (handler.running):
             indir = handler.get_final_output()
             target_linear_velocity = indir.y * MAX_VEL_LINEAR
-            target_angular_velocity = indir.x * MIN_VEL_ANGULAR
+            target_angular_velocity = indir.x * MAX_VEL_ANGULAR
 
-            control_linear_velocity = target_linear_velocity
-            control_angular_velocity = target_angular_velocity
+            control_linear_velocity = clamp_accel(control_linear_velocity, target_linear_velocity, MAX_DELTAV_LINEAR)
+            control_angular_velocity = clamp_accel(control_angular_velocity, target_angular_velocity, MAX_DELTAV_ANGULAR)
 
             twist = Twist()
             twist.linear.x = control_linear_velocity
