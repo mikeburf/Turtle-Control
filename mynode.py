@@ -128,7 +128,7 @@ def main():
 
     rclpy.init()
 
-
+    #rclpy.on_shutdown(callback here)
         
     try:
         print("Ctrl-C to quit")
@@ -142,6 +142,7 @@ def main():
         pyglet.app.run() # runs the pyglet loop that handles input
         print("Pyglet finished")
     except KeyboardInterrupt:
+        """
         twist = Twist()
         twist.linear.x = 0.0
         twist.linear.y = 0.0
@@ -152,10 +153,11 @@ def main():
         twist.angular.z = 0.0
         pub.publish(twist)
         handler.running = False
+        """
         pass
     finally:
-        handler.running = False
-        
+        rclpy.try_shutdown()
+        node.destroy_node()
  
         #rclpy.shutdown()
 
