@@ -4,12 +4,16 @@ from pyglet.math import Vec2
 import pyglet.input as inp
 import threading
 import time
+import numpy
 
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import TwistStamped
 import rclpy
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile
+
+LINEAR_CONTROL_EXPONENT = 2.0 # how much to exponentiate the input direction by
+ANGULAR_CONTROL_EXPONENT = 1.5 # how much to exponentiate the input direction by
 
 MAX_VEL_LINEAR = 0.22
 MAX_VEL_ANGULAR = 3.0
@@ -64,8 +68,8 @@ def loop(handler, pub):
     try:
         while (handler.running):
             indir = handler.get_final_output()
-            target_linear_velocity = indir.y * MAX_VEL_LINEAR
-            target_angular_velocity = indir.x * MAX_VEL_ANGULAR
+            target_linear_velocity = -numpy.sign(indir.y) * (indir.y ** LINEAR_CONTROL_EXPONENT) * MAX_VEL_LINEAR
+            target_angular_velocity = numpy.sign(indir.x) * (indir.x ** ANGULAR_CONTROL_EXPONENT) * MAX_VEL_ANGULAR
 
             control_linear_velocity = clamp_accel(control_linear_velocity, target_linear_velocity, MAX_DELTAV_LINEAR)
             control_angular_velocity = clamp_accel(control_angular_velocity, target_angular_velocity, MAX_DELTAV_ANGULAR)
